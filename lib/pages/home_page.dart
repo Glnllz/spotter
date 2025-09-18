@@ -1,6 +1,7 @@
 // lib/pages/home_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:spotter/main.dart';
 
 // Импортируем все страницы, которые будут в навигации
 import 'home_feed_widget.dart';
@@ -21,12 +22,16 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   // Список всех виджетов/страниц для навигации
-  static const List<Widget> _widgetOptions = <Widget>[
-    HomeFeedWidget(), // Индекс 0
-    SearchPage(),     // Индекс 1
-    GroupsPage(),     // Индекс 2
-    SectionsPage(),   // Индекс 3
-    ProfilePage(),    // Индекс 4
+  static final List<Widget> _widgetOptions = <Widget>[
+    const HomeFeedWidget(), // Индекс 0
+    const SearchPage(),     // Индекс 1
+    const GroupsPage(),     // Индекс 2
+    const SectionsPage(),   // Индекс 3
+
+    // Используем УУИД в качестве параметра
+    // Определение "своего" профиля берется исходя из юзера в свойстве auth
+    // добавлена юзинг директива main.dart для возможности вызова supabase
+    ProfilePage(userId: supabase.auth.currentUser!.id), // Индекс 4
   ];
 
   // Функция, которая вызывается при нажатии на вкладку

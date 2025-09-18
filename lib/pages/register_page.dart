@@ -50,6 +50,15 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         Navigator.of(context).pushReplacementNamed('/login');
       }
+
+      // Создаем пользователя в таблице profiles
+      // т.к, у нас отдельная таблица с пользователями и профилями
+      await supabase
+      .from('profiles')
+      .insert({'id': supabase.auth.currentUser?.id,
+               'full_name': _fullNameController.text.trim()});
+      // респонс бади не получаем, нужно просто отправить запись о профиле
+      
     } on AuthException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
