@@ -5,7 +5,12 @@ import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/home_page.dart';
 import 'pages/forgot_password_page.dart';
+import 'pages/create_group_page.dart';
+import 'pages/group_details_page.dart';
+import 'pages/section_details_page.dart';
+import 'pages/edit_profile_page.dart';
 import 'utils/constants.dart';
+
 
 Future<void> main() async {
 
@@ -60,6 +65,10 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomePage(),
         '/forgot-password': (context) => const ForgotPasswordPage(),
+        '/create-group': (context) => const CreateGroupPage(),
+        '/group-details': (context) => const GroupDetailsPage(),
+        '/section-details': (context) => const SectionDetailsPage(),
+        '/edit-profile': (context) => const EditProfilePage(),
       },
     );
   }

@@ -1,34 +1,79 @@
-import 'package:flutter/material.dart';
-import '../main.dart'; // Импортируем для доступа к supabase
+// lib/pages/home_page.dart
 
-// Это временная заглушка для главной страницы.
-// Здесь будет лента, поиск и все остальное.
-class HomePage extends StatelessWidget {
+import 'package:flutter/material.dart';
+
+// Импортируем все страницы, которые будут в навигации
+import 'home_feed_widget.dart';
+import 'search_page.dart';
+import 'groups_page.dart';
+import 'sections_page.dart';
+import 'profile_page.dart';
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  // Индекс выбранной вкладки (начинаем с 0 - Лента)
+  int _selectedIndex = 0;
+
+  // Список всех виджетов/страниц для навигации
+  static const List<Widget> _widgetOptions = <Widget>[
+    HomeFeedWidget(), // Индекс 0
+    SearchPage(),     // Индекс 1
+    GroupsPage(),     // Индекс 2
+    SectionsPage(),   // Индекс 3
+    ProfilePage(),    // Индекс 4
+  ];
+
+  // Функция, которая вызывается при нажатии на вкладку
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Главная'),
-        actions: [
-          // Добавим кнопку выхода, чтобы можно было легко тестировать вход/выход.
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              // Команда "Дворец, я ухожу".
-              await supabase.auth.signOut();
-
-              // Отправляем котенка обратно на страницу входа.
-              // pushAndRemoveUntil удаляет все экраны "под" новым,
-              // чтобы котенок не мог вернуться на главный экран кнопкой "назад".
-              Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-            },
-          )
-        ],
+      // В качестве тела показываем виджет из списка по текущему индексу
+      body: Center(
+        child: _widgetOptions.elementAt(_selectedIndex),
       ),
-      body: const Center(
-        child: Text('Привет, котенок! Ты вошел в свой домик.'),
+      // А вот и сама панель навигации
+      bottomNavigationBar: BottomNavigationBar(
+        // Иконки для каждой вкладки
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Лента',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Поиск',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.group),
+            label: 'Группы',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sports_basketball),
+            label: 'Секции',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Профиль',
+          ),
+        ],
+        currentIndex: _selectedIndex, // Какая вкладка сейчас активна
+        selectedItemColor: Theme.of(context).primaryColor, // Цвет активной иконки
+        unselectedItemColor: Colors.grey, // Цвет неактивных иконок
+        onTap: _onItemTapped, // Что делать при нажатии
+        showUnselectedLabels: true, // Показывать подписи у неактивных иконок
+        type: BottomNavigationBarType.fixed, // Чтобы все вкладки были видны
       ),
     );
   }
