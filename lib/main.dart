@@ -78,7 +78,16 @@ class MyApp extends StatelessWidget {
           
           return GroupDetailsPage(groupId: groupId);
         },
-        '/section-details': (context) => const SectionDetailsPage(),
+        // В главном файле (где routes)
+        '/section-details': (context) {
+          final sectionEventId = ModalRoute.of(context)?.settings.arguments as String?;
+          if (sectionEventId == null) {
+            return const Scaffold(
+              body: Center(child: Text('Ошибка: не указан ID события')),
+            );
+          }
+          return SectionDetailsPage(sectionEventId: sectionEventId);
+        },
         '/edit-profile': (context) => const EditProfilePage(),
       },
     );
