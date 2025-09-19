@@ -25,7 +25,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class ProfilePageState extends State<ProfilePage> {
-  late String _userId; // Local state variable
+  late String _userId;
 
   // Переменные окна
   Map<String, dynamic>? _userProfile;
@@ -34,6 +34,10 @@ class ProfilePageState extends State<ProfilePage> {
   final _searchTextController = TextEditingController();
   List<Map<String, dynamic>> _searchResults = [];
   bool _showDropdown = false;
+  int _followers = 0;
+
+  // Добавьте переменную для статуса подписки
+  bool _isSubscribed = false;
 
   // Заполнение профиля
   @override
@@ -61,11 +65,28 @@ class ProfilePageState extends State<ProfilePage> {
 
     final myId = supabase.auth.currentUser?.id;
 
+    // Получаем количество подписчиков
+    final followers = await _followersCount(userGuid);
+
     setState(() {
       _userProfile = profile;
       _isMyProfile = myId != null && myId == userGuid;
       _isLoading = false;
+      _followers = followers;
     });
+
+    if (!_isMyProfile) {
+      dynamic myId = supabase.auth.currentUser?.id;
+      myId ??= "";
+      final subscribeResponse = await supabase
+          .from('subscribes')
+          .select('id')
+          .eq('user_id', _userId)
+          .eq('subscribed_user', myId!);
+      setState(() {
+        _isSubscribed = subscribeResponse.isNotEmpty;
+      });
+    }
   } catch (error) {
     setState(() {
       _isLoading = false;
@@ -95,7 +116,6 @@ class ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  // When you want to show another user's profile:
   void _showUserProfile(String userId) {
     setState(() {
       _userId = userId;
@@ -110,6 +130,22 @@ class ProfilePageState extends State<ProfilePage> {
   final myId = supabase.auth.currentUser?.id;
   if (myId != null) {
     _showUserProfile(myId);
+  }
+
+}
+
+  Future<int> _followersCount(String userId) async {
+  try {
+    final response = await supabase
+        .from('subscribes')
+        .select('id')
+        .eq('user_id', userId);
+
+    if (response == null) return 0;
+    if (response is List) return response.length;
+    return 0;
+  } catch (e) {
+    return 0;
   }
 }
 
@@ -203,20 +239,17 @@ class ProfilePageState extends State<ProfilePage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Center(
-                          child: Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.grey[300],
-                                border: Border.all(color: Colors.grey, width: 1),
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Colors.grey,
-                              ),
-                            ),
+                          child: (_userProfile?['avatar_url'] != null && _userProfile!['avatar_url'].toString().isNotEmpty)
+                              ? CircleAvatar(
+                                  radius: 48,
+                                  backgroundImage: NetworkImage(_userProfile!['avatar_url']),
+                                  backgroundColor: Colors.grey[200],
+                                )
+                              : CircleAvatar(
+                                  radius: 48,
+                                  child: Icon(Icons.person, size: 48),
+                                  backgroundColor: Colors.grey[200],
+                                ),
                         ),
                       ),
 
@@ -258,7 +291,7 @@ class ProfilePageState extends State<ProfilePage> {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      '${_userProfile!['following_count'] ?? 0} Following',
+                                      'Followers: $_followers',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.grey[600],
@@ -293,25 +326,76 @@ class ProfilePageState extends State<ProfilePage> {
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width * 0.6,
                             height: 40,
-                            child: ElevatedButton(
-                              onPressed: _isMyProfile
-                                  ? () {
-                                      // TODO: Переход на страницу редактирования профиля
-                                    }
-                                  : () {
-                                      // TODO: Реализовать функцию "Написать сообщение"
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.lightGreen[300],
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                            child: Row(
+                              children: [
+                                // Левая кнопка (основная)
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: _isMyProfile
+                                        ? () {
+                                            Navigator.of(context).pushNamed('/edit-profile');
+                                          }
+                                        : () {
+                                            // TODO: Реализовать функцию "Написать сообщение"
+                                          },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.lightGreen[300],
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(double.infinity, 60),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _isMyProfile ? 'Редактировать профиль' : 'Написать сообщение',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                _isMyProfile ? 'Редактировать профиль' : 'Написать сообщение',
-                                style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600),
-                              ),
+                                if (!_isMyProfile)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 12.0),
+                                    child: SizedBox(
+                                      width: 40, // Фиксированная ширина для круглой кнопки
+                                      height: 40, // Такая же высота как у левой кнопки
+                                      child: ElevatedButton(
+                                        onPressed: _isSubscribed
+                                            ? () async {
+                                                await supabase
+                                                        .from('subscribes')
+                                                        .delete()
+                                                        .eq('user_id', _userId).eq('subscribed_user', widget.initialUserId);
+                                                _fetchUserProfile(_userId);
+                                              }
+                                            : () async {
+                                                await supabase
+                                                  .from('subscribes')
+                                                  .insert({'user_id': _userId, 'subscribed_user': widget.initialUserId});
+                                                _fetchUserProfile(_userId);
+                                              },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.lightGreen[300],
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(40, 40), // Квадратная кнопка
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(30),
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          _isSubscribed ? Icons.check : Icons.flash_on,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
