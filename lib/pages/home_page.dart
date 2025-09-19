@@ -8,6 +8,8 @@ import 'home_feed_widget.dart';
 import 'search_page.dart';
 import 'groups_page.dart';
 import 'sections_page.dart';
+
+// Импортируем profile_page.dart
 import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,27 +20,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Индекс выбранной вкладки (начинаем с 0 - Лента)
   int _selectedIndex = 0;
 
-  // Список всех виджетов/страниц для навигации
-  static final List<Widget> _widgetOptions = <Widget>[
-    const HomeFeedWidget(), // Индекс 0
-    const SearchPage(),     // Индекс 1
-    const GroupsPage(),     // Индекс 2
-    const SectionsPage(),   // Индекс 3
+  // Используем публичный тип состояния
+  final GlobalKey<ProfilePageState> _profilePageKey = GlobalKey<ProfilePageState>();
 
-    // Используем УУИД в качестве параметра
-    // Определение "своего" профиля берется исходя из юзера в свойстве auth
-    // добавлена юзинг директива main.dart для возможности вызова supabase
-    ProfilePage(userId: supabase.auth.currentUser!.id), // Индекс 4
-  ];
+  // Обновляем список виджетов, передаём key
+  late final List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    _widgetOptions = <Widget>[
+      const HomeFeedWidget(),
+      const SearchPage(),
+      const GroupsPage(),
+      const SectionsPage(),
+      ProfilePage(
+        key: _profilePageKey,
+        initialUserId: supabase.auth.currentUser!.id,
+      ),
+    ];
+  }
 
   // Функция, которая вызывается при нажатии на вкладку
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+
+    // Если нажали на вкладку "Профиль" (индекс 4), обновляем профиль
+    if (index == 4) {
+      _profilePageKey.currentState?.showMyProfile();
+    }
   }
 
   @override
