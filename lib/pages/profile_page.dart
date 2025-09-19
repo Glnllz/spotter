@@ -2,8 +2,10 @@
 
 // Юзинг директивы
 import 'package:flutter/material.dart';
+import 'package:spotter/pages/chat_screen.dart';
 import '../main.dart';
 
+// ignore: must_be_immutable
 class ProfilePage extends StatefulWidget {
   String initialUserId; 
 
@@ -91,6 +93,7 @@ class ProfilePageState extends State<ProfilePage> {
     setState(() {
       _isLoading = false;
     });
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Ошибка загрузки профиля: $error')),
     );
@@ -134,18 +137,92 @@ class ProfilePageState extends State<ProfilePage> {
 
 }
 
-  Future<int> _followersCount(String userId) async {
-  try {
-    final response = await supabase
-        .from('subscribes')
-        .select('id')
-        .eq('user_id', userId);
+Future<int> _followersCount(String userId) async {
+try {
+  final response = await supabase
+      .from('subscribes')
+      .select('id')
+      .eq('user_id', userId);
 
-    if (response == null) return 0;
-    if (response is List) return response.length;
-    return 0;
+  // ignore: dead_code, unnecessary_null_comparison
+  if (response == null) return 0;
+  // ignore: unnecessary_type_check
+  if (response is List) return response.length;
   } catch (e) {
     return 0;
+  }
+}
+
+Future<void> _openIndividualChat(BuildContext context) async {
+  final currentUserId = supabase.auth.currentUser?.id;
+  final targetUserId = _userId;
+
+  if (currentUserId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Непредвиденная ошибка. Невозможно открыть чат. Попробуйте позже...')),
+    );
+    return;
+  }
+
+  try {
+    // 1. Ищем существующий чат через вложенный запрос
+    final existingChats = await supabase
+        .from('chats')
+        .select('''
+          id,
+          chat_members!inner(user_id)
+        ''')
+        .eq('individual', true)
+        .eq('chat_members.user_id', currentUserId);
+
+    // 2. Проверяем каждый найденный чат на наличие целевого пользователя
+    for (final chat in existingChats) {
+      final chatId = chat['id'] as String;
+      
+      final targetMember = await supabase
+          .from('chat_members')
+          .select()
+          .eq('chat_id', chatId)
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+
+      if (targetMember != null) {
+        // Чат найден - открываем его
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(chatId: chatId),
+          ),
+        );
+        return;
+      }
+    }
+
+    // 3. Если чат не найден - создаем новый
+    final newChat = await supabase
+        .from('chats')
+        .insert({'individual': true})
+        .select()
+        .single();
+
+    // 4. Добавляем обоих участников
+    await supabase
+        .from('chat_members')
+        .insert([
+          {'chat_id': newChat['id'], 'user_id': currentUserId},
+          {'chat_id': newChat['id'], 'user_id': targetUserId}
+        ]);
+
+    // 5. Открываем новый чат
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(chatId: newChat['id']),
+      ),
+    );
+
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Ошибка при создании/поиске чата: $e')),
+    );
   }
 }
 
@@ -247,8 +324,8 @@ class ProfilePageState extends State<ProfilePage> {
                                 )
                               : CircleAvatar(
                                   radius: 48,
-                                  child: Icon(Icons.person, size: 48),
                                   backgroundColor: Colors.grey[200],
+                                  child: Icon(Icons.person, size: 48),
                                 ),
                         ),
                       ),
@@ -336,7 +413,7 @@ class ProfilePageState extends State<ProfilePage> {
                                             Navigator.of(context).pushNamed('/edit-profile');
                                           }
                                         : () {
-                                            // TODO: Реализовать функцию "Написать сообщение"
+                                            _openIndividualChat(context);
                                           },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.lightGreen[300],

@@ -11,6 +11,7 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = true;
+  // ignore: unused_field
   Map<String, dynamic>? _profile;
 
   final _nameController = TextEditingController();
