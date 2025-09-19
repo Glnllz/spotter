@@ -66,7 +66,18 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/forgot-password': (context) => const ForgotPasswordPage(),
         '/create-group': (context) => const CreateGroupPage(),
-        '/group-details': (context) => const GroupDetailsPage(),
+         '/group-details': (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final groupId = arguments?['groupId'] as String?;
+          
+          if (groupId == null) {
+            return const Scaffold(
+              body: Center(child: Text('Ошибка: не указан ID группы')),
+            );
+          }
+          
+          return GroupDetailsPage(groupId: groupId);
+        },
         '/section-details': (context) => const SectionDetailsPage(),
         '/edit-profile': (context) => const EditProfilePage(),
       },
