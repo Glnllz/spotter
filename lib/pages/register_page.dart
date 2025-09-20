@@ -1,8 +1,7 @@
 // lib/pages/register_page.dart
 
 import 'package:flutter/material.dart';
-// ВОТ ИСПРАВЛЕНИЕ! Была точка, стало двоеточие.
-import 'package:flutter/gestures.dart'; 
+import 'package:flutter/gestures.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../utils/constants.dart';
@@ -24,6 +23,15 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  // --- Переменные для онбординга ---
+  String? _selectedSkillLevel;
+  final Set<String> _selectedInterests = {};
+
+  final List<String> _availableSkillLevels = ['Новичок', 'Любитель', 'Профи'];
+  final List<String> _availableInterests = [
+    'Футбол', 'Баскетбол', 'Теннис', 'Бег', 'Йога', 'Плавание', 'Велоспорт', 'Зал'
+  ];
+
   bool _isPasswordObscured = true;
   bool _isConfirmPasswordObscured = true;
   bool _isLoading = false;
@@ -32,14 +40,44 @@ class _RegisterPageState extends State<RegisterPage> {
     final isValid = _formKey.currentState!.validate();
     if (!isValid) return;
 
+    // --- Валидация интересов ---
+    if (_selectedInterests.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Пожалуйста, выберите хотя бы один интерес'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      await supabase.auth.signUp(
+      // --- Добавляем данные онбординга в `data` ---
+      final response = await supabase.auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-        data: {'full_name': _fullNameController.text.trim()},
+        data: {
+          'full_name': _fullNameController.text.trim(),
+          'skill_level': _selectedSkillLevel,
+          // Сохраняем интересы как строку, разделенную запятыми
+          'interests': _selectedInterests.join(', '),
+        },
       );
+      
+      final newUserId = response.user?.id;
+      if (newUserId == null) {
+        throw 'Не удалось создать пользователя.';
+      }
+
+      // --- Добавляем все данные в таблицу profiles ---
+      await supabase.from('profiles').insert({
+        'id': newUserId,
+        'full_name': _fullNameController.text.trim(),
+        'skill_level': _selectedSkillLevel,
+        'interests': _selectedInterests.join(', '),
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -50,20 +88,20 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         Navigator.of(context).pushReplacementNamed('/login');
       }
-
-      // Создаем пользователя в таблице profiles
-      // т.к, у нас отдельная таблица с пользователями и профилями
-      await supabase
-      .from('profiles')
-      .insert({'id': supabase.auth.currentUser?.id,
-               'full_name': _fullNameController.text.trim()});
-      // респонс бади не получаем, нужно просто отправить запись о профиле
-      
     } on AuthException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (error) {
+        if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Произошла непредвиденная ошибка: $error'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -167,15 +205,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         if (value.length < 6) {
                           return 'Пароль должен быть не менее 6 символов';
                         }
-                        if (!value.contains(RegExp(r'[A-Z]'))) {
-                          return 'Пароль должен содержать заглавную букву';
-                        }
-                        if (!value.contains(RegExp(r'[0-9]'))) {
-                          return 'Пароль должен содержать цифру';
-                        }
-                        if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-                          return 'Пароль должен содержать спецсимвол';
-                        }
                         return null;
                       },
                     ),
@@ -197,14 +226,56 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Пожалуйста, повторите пароль';
-                        }
                         if (value != _passwordController.text) {
                           return 'Пароли не совпадают';
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      value: _selectedSkillLevel,
+                      decoration: formInputDecoration.copyWith(labelText: 'УРОВЕНЬ ПОДГОТОВКИ'),
+                      items: _availableSkillLevels.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setState(() {
+                          _selectedSkillLevel = newValue;
+                        });
+                      },
+                      validator: (value) => value == null ? 'Выберите ваш уровень' : null,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text('ИНТЕРЕСЫ', style: TextStyle(color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 4.0,
+                      children: _availableInterests.map((interest) {
+                        final isSelected = _selectedInterests.contains(interest);
+                        return FilterChip(
+                          label: Text(interest),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedInterests.add(interest);
+                              } else {
+                                _selectedInterests.remove(interest);
+                              }
+                            });
+                          },
+                          selectedColor: primaryColor.withOpacity(0.8),
+                          checkmarkColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                          ),
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
