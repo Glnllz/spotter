@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:spotter/main.dart';
+import 'package:spotter/utils/constants.dart';
 
 // Импортируем все страницы, которые будут в навигации
 import 'home_feed_widget.dart';
@@ -23,7 +24,8 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   // Используем публичный тип состояния
-  final GlobalKey<ProfilePageState> _profilePageKey = GlobalKey<ProfilePageState>();
+  final GlobalKey<ProfilePageState> _profilePageKey =
+      GlobalKey<ProfilePageState>();
 
   // Обновляем список виджетов, передаём key
   late final List<Widget> _widgetOptions;
@@ -65,34 +67,42 @@ class _HomePageState extends State<HomePage> {
       // А вот и сама панель навигации
       bottomNavigationBar: BottomNavigationBar(
         // Иконки для каждой вкладки
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Лента',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Поиск',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Группы',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sports_basketball),
-            label: 'Секции',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Профиль',
-          ),
+        items: <BottomNavigationBarItem>[
+          _buildNavItem(icon: Icons.home, index: 0),
+          _buildNavItem(icon: Icons.search, index: 1),
+          _buildNavItem(icon: Icons.groups_outlined, index: 2), // Новая иконка
+          _buildNavItem(icon: Icons.flash_on, index: 3), // Новая иконка
+          _buildNavItem(icon: Icons.person_outline, index: 4),
         ],
         currentIndex: _selectedIndex, // Какая вкладка сейчас активна
-        selectedItemColor: Theme.of(context).primaryColor, // Цвет активной иконки
-        unselectedItemColor: Colors.grey, // Цвет неактивных иконок
         onTap: _onItemTapped, // Что делать при нажатии
-        showUnselectedLabels: true, // Показывать подписи у неактивных иконок
         type: BottomNavigationBarType.fixed, // Чтобы все вкладки были видны
+        showSelectedLabels: false, // Убираем подписи
+        showUnselectedLabels: false,
+        backgroundColor: const Color(0xFFF0F0E8), // Цвет фона как в макете
+        elevation: 0, // Убираем тень
+      ),
+    );
+  }
+
+  // Вспомогательный метод для создания элемента навигации
+  BottomNavigationBarItem _buildNavItem(
+      {required IconData icon, required int index}) {
+    final bool isSelected = _selectedIndex == index;
+    return BottomNavigationBarItem(
+      label: '', // Пустой label
+      icon: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.grey[300] : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: Colors.black, // Все иконки черные
+          size: 28,
+        ),
       ),
     );
   }

@@ -115,85 +115,207 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green[700]!),
+          ),
+        ),
       );
     }
 
     if (_group == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Ошибка')),
-        body: const Center(child: Text('Группа не найдена')),
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.green[700]),
+          title: Text(
+            'Ошибка',
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
+        body: Center(child: Text('Группа не найдена')),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(_group!['name'] ?? 'Детали группы'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.green[700]),
+        title: Text(
+          _group!['name'] ?? 'Детали группы',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Обложка группы
-            if (_group!['cover_url'] != null)
-              Image.network(
-                _group!['cover_url'],
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
+            // Обложка группы с декоративными элементами
+            Stack(
+              children: [
+                if (_group!['cover_url'] != null)
+                  Container(
+                    height: 200,
+                    width: double.infinity,
+                    child: ClipRRect(
+                      child: Image.network(
+                        _group!['cover_url'],
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    height: 200,
+                    width: double.infinity,
+                    color: Colors.green[100],
+                    child: Icon(
+                      Icons.group,
+                      size: 60,
+                      color: Colors.green[700],
+                    ),
+                  ),
+                
+                // Декоративные зеленые элементы
+                Positioned(
+                  top: -20,
+                  right: -20,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -30,
+                  left: -30,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             
-            // Информация о группе
+            // Основная информация о группе
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     _group!['name'] ?? '',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 12),
                   Text(
                     _group!['description'] ?? '',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 20),
                   
                   // Счетчик участников
-                  Row(
-                    children: [
-                      const Icon(Icons.people, size: 16),
-                      const SizedBox(width: 4),
-                      Text('${_members.length} участников'),
-                    ],
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.people, size: 20, color: Colors.green[700]),
+                        SizedBox(width: 8),
+                        Text(
+                          '${_members.length} участников',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 20),
                   
                   // Кнопка вступления/выхода
                   if (_currentUserId != null)
-                    ElevatedButton(
-                      onPressed: _isMember ? _leaveGroup : _joinGroup,
-                      child: Text(_isMember ? 'Выйти из группы' : 'Вступить в группу'),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isMember ? _leaveGroup : _joinGroup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isMember ? Colors.white : Colors.green[700],
+                          foregroundColor: _isMember ? Colors.green[700] : Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: _isMember 
+                                ? BorderSide(color: Colors.green[700]!, width: 1.5)
+                                : BorderSide.none,
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          _isMember ? 'Покинуть группу' : 'Присоединиться',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                 ],
               ),
             ),
             
+            // Разделитель
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(height: 0),
+            ),
+            
             // Список участников
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
               child: Text(
-                'Участники:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                'Участники',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
+            
+            // Горизонтальный список участников
+            Container(
               height: 100,
+              margin: EdgeInsets.only(bottom: 20),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _members.length,
                 itemBuilder: (context, index) {
                   final member = _members[index]['profiles'] ?? {};
@@ -202,27 +324,57 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                     margin: const EdgeInsets.symmetric(horizontal: 8),
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: member['avatar_url'] != null
-                              ? NetworkImage(member['avatar_url'])
-                              : null,
-                          child: member['avatar_url'] == null
-                              ? const Icon(Icons.person)
-                              : null,
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.green[100]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: ClipOval(
+                            child: member['avatar_url'] != null
+                                ? Image.network(
+                                    member['avatar_url'],
+                                    fit: BoxFit.cover,
+                                  )
+                                : Icon(
+                                    Icons.person,
+                                    color: Colors.green[700],
+                                    size: 30,
+                                  ),
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 8),
                         Text(
                           member['full_name'] ?? 'Без имени',
                           textAlign: TextAlign.center,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   );
                 },
+              ),
+            ),
+            
+            // Декоративный зеленый элемент внизу
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
           ],
