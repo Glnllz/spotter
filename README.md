@@ -32,3 +32,5 @@
 *   **Система подписок:** Подписывайтесь на интересных вам людей, чтобы следить за их активностью.
 *   **Прямые сообщения:** Возможность начать индивидуальный чат с любым пользователем.
 ![Структура базы данных](https://raw.githubusercontent.com/Glnllz/spotter/refs/heads/main/assets/%D0%A1%D1%82%D1%80%D1%83%D0%BA%D1%82%D1%83%D1%80%D0%B0%20%D0%91%D0%94.jpeg)
+
+![Дизайн приложения](https://raw.githubusercontent.com/Glnllz/spotter/refs/heads/main/assets/%D0%94%D0%B8%D0%B7%D0%B0%D0%B9%D0%BD.jpeg)
